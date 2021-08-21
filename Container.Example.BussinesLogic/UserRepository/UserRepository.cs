@@ -10,7 +10,7 @@ namespace Container.Example.BussinesLogic
 	{
 		private readonly DateTime date;
 
-		public UserRepository(DateTime? date = null)
+		public UserRepository(int number, int[] array, DateTime? date = null)
 		{
 			this.date = date ?? DateTime.Now;
 		}

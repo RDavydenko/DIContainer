@@ -1,4 +1,6 @@
-﻿using Container.Core.Models;
+﻿using Container.Core.Extensions;
+using Container.Core.Models;
+using Container.Core.Utils;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,7 +12,6 @@ namespace Container.Core
 {
 	internal class ContainerScope
 	{
-		private static readonly Type[] primitiveTypes = new[] { typeof(string), typeof(decimal), typeof(DateTime) };
 		private readonly Dictionary<string, TypeInfo> dictionaryTypes;
 
 		public ContainerScope()
@@ -29,16 +30,6 @@ namespace Container.Core
 			Register(typeof(TBase).FullName, typeof(TConcrete), lifetime, factory);
 		}
 
-		private void Register<T>(string typeName, Type realizationType, LifetimeType lifetime, Func<T> factory)
-		{
-			dictionaryTypes[typeName] = new TypeInfo
-			{
-				Realization = realizationType,
-				Factory = factory as Func<object>,
-				Lifetime = lifetime
-			};
-		}
-
 		public T Resolve<T>()
 		{
 			var type = typeof(T);
@@ -46,6 +37,22 @@ namespace Container.Core
 			return resolved is null 
 				? default(T) 
 				: (T)resolved;
+		}
+
+		private void Register<T>(string typeName, Type realizationType, LifetimeType lifetime, Func<T> factory)
+		{
+			ThrowsIf.TypeIsPrimitive(realizationType);
+			if (factory is null)
+			{
+				ThrowsIf.TypeIsAbstract(realizationType);
+			}
+
+			dictionaryTypes[typeName] = new TypeInfo
+			{
+				Realization = realizationType,
+				Factory = factory as Func<object>,
+				Lifetime = lifetime
+			};
 		}
 
 		private object Resolve(Type type)
@@ -82,7 +89,7 @@ namespace Container.Core
 		private object CreateInstance(Type type)
 		{
 			// Primitive type -> Null (не вызываем конструктор)
-			if (type.IsPrimitive || type.IsEnum || type.IsArray || primitiveTypes.Contains(type))
+			if (type.IsPrimitive())
 			{
 				return null;
 			}
