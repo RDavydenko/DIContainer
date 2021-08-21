@@ -70,7 +70,6 @@ namespace Container.Tests
 
 			// Abstract type without Register<>() -> throws Exception
 			scope = new ContainerScope();
-			// TODO: заменить тип исключения
 			Assert.ThrowsException<CannotResolveTypeException>(scope.Resolve<IUserRepository>);
 		}
 
