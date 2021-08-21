@@ -1,8 +1,8 @@
-using System;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Container.Core;
-using Container.Example.BussinesLogic;
 using Container.Core.Exceptions;
+using Container.Example.BussinesLogic;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -78,7 +78,7 @@ namespace Container.Tests
 		public void TransientTest()
 		{
 			var scope = new ContainerScope();
-			scope.Register<IUserRepository, UserRepository>(LifetimeType.Transient);
+			scope.Register<IUserRepository, UserRepository>(Lifetime.Transient);
 			var repository1 = scope.Resolve<IUserRepository>();
 			var repository2 = scope.Resolve<IUserRepository>();
 			Assert.AreNotSame(repository1, repository2);
@@ -88,7 +88,7 @@ namespace Container.Tests
 		public void SingletonTest()
 		{
 			var scope = new ContainerScope();
-			scope.Register<IUserRepository, UserRepository>(LifetimeType.Singleton);
+			scope.Register<IUserRepository, UserRepository>(Lifetime.Singleton);
 			var repository1 = scope.Resolve<IUserRepository>();
 			var repository2 = scope.Resolve<IUserRepository>();
 			Assert.AreSame(repository1, repository2);
@@ -109,7 +109,7 @@ namespace Container.Tests
 		public void HardFactoryTest()
 		{
 			var scope = new ContainerScope();
-			scope.Register<IUserRepository, UserRepository>(LifetimeType.Singleton);
+			scope.Register<IUserRepository, UserRepository>(Lifetime.Singleton);
 			scope.Register<IUserService>(factory: () => new UserService(scope.Resolve<IUserRepository>()));
 			scope.Register<UserExtendedService>();
 
@@ -142,32 +142,32 @@ namespace Container.Tests
 
 			Assert.ThrowsException<CannotRegisterPrimitiveTypeException>(() => scope.Register<string>());
 			Assert.ThrowsException<CannotRegisterPrimitiveTypeException>(() => scope.Register<string>(factory: () => "String"));
-			Assert.ThrowsException<CannotRegisterPrimitiveTypeException>(() => scope.Register<string>(LifetimeType.Singleton));
-			Assert.ThrowsException<CannotRegisterPrimitiveTypeException>(() => scope.Register<string>(LifetimeType.Singleton, () => "String"));
+			Assert.ThrowsException<CannotRegisterPrimitiveTypeException>(() => scope.Register<string>(Lifetime.Singleton));
+			Assert.ThrowsException<CannotRegisterPrimitiveTypeException>(() => scope.Register<string>(Lifetime.Singleton, () => "String"));
 			Assert.IsNull(scope.Resolve<string>());
 
 			Assert.ThrowsException<CannotRegisterPrimitiveTypeException>(() => scope.Register<int>());
 			Assert.ThrowsException<CannotRegisterPrimitiveTypeException>(() => scope.Register<int>(factory: () => 123));
-			Assert.ThrowsException<CannotRegisterPrimitiveTypeException>(() => scope.Register<int>(LifetimeType.Singleton));
-			Assert.ThrowsException<CannotRegisterPrimitiveTypeException>(() => scope.Register<int>(LifetimeType.Singleton, () => 123));
+			Assert.ThrowsException<CannotRegisterPrimitiveTypeException>(() => scope.Register<int>(Lifetime.Singleton));
+			Assert.ThrowsException<CannotRegisterPrimitiveTypeException>(() => scope.Register<int>(Lifetime.Singleton, () => 123));
 			Assert.AreEqual(scope.Resolve<int>(), new int());
 
 			Assert.ThrowsException<CannotRegisterPrimitiveTypeException>(() => scope.Register<decimal>());
 			Assert.ThrowsException<CannotRegisterPrimitiveTypeException>(() => scope.Register<decimal>(factory: () => 123m));
-			Assert.ThrowsException<CannotRegisterPrimitiveTypeException>(() => scope.Register<decimal>(LifetimeType.Singleton));
-			Assert.ThrowsException<CannotRegisterPrimitiveTypeException>(() => scope.Register<decimal>(LifetimeType.Singleton, () => 123m));
+			Assert.ThrowsException<CannotRegisterPrimitiveTypeException>(() => scope.Register<decimal>(Lifetime.Singleton));
+			Assert.ThrowsException<CannotRegisterPrimitiveTypeException>(() => scope.Register<decimal>(Lifetime.Singleton, () => 123m));
 			Assert.AreEqual(scope.Resolve<decimal>(), new decimal());
 
 			Assert.ThrowsException<CannotRegisterPrimitiveTypeException>(() => scope.Register<DateTime>());
 			Assert.ThrowsException<CannotRegisterPrimitiveTypeException>(() => scope.Register<DateTime>(factory: () => DateTime.Now));
-			Assert.ThrowsException<CannotRegisterPrimitiveTypeException>(() => scope.Register<DateTime>(LifetimeType.Singleton));
-			Assert.ThrowsException<CannotRegisterPrimitiveTypeException>(() => scope.Register<DateTime>(LifetimeType.Singleton, () => DateTime.Now));
+			Assert.ThrowsException<CannotRegisterPrimitiveTypeException>(() => scope.Register<DateTime>(Lifetime.Singleton));
+			Assert.ThrowsException<CannotRegisterPrimitiveTypeException>(() => scope.Register<DateTime>(Lifetime.Singleton, () => DateTime.Now));
 			Assert.AreEqual(scope.Resolve<DateTime>(), new DateTime());
 
 			Assert.ThrowsException<CannotRegisterPrimitiveTypeException>(() => scope.Register<int[]>());
 			Assert.ThrowsException<CannotRegisterPrimitiveTypeException>(() => scope.Register<int[]>(factory: () => new int[0]));
-			Assert.ThrowsException<CannotRegisterPrimitiveTypeException>(() => scope.Register<int[]>(LifetimeType.Singleton));
-			Assert.ThrowsException<CannotRegisterPrimitiveTypeException>(() => scope.Register<int[]>(LifetimeType.Singleton, () => new int[0]));
+			Assert.ThrowsException<CannotRegisterPrimitiveTypeException>(() => scope.Register<int[]>(Lifetime.Singleton));
+			Assert.ThrowsException<CannotRegisterPrimitiveTypeException>(() => scope.Register<int[]>(Lifetime.Singleton, () => new int[0]));
 			Assert.IsNull(scope.Resolve<int[]>());
 		}
 
@@ -179,7 +179,7 @@ namespace Container.Tests
 			var rep2 = DIContainer.GlobalScope.Resolve<UserRepository>();
 			var rep3 = DIContainer.GetLocalScope().Resolve<UserRepository>();
 
-			Assert.IsTrue(rep1.Date == rep2.Date &&  rep1.Date == rep3.Date && rep1.Date == new DateTime(1998, 12, 31));
+			Assert.IsTrue(rep1.Date == rep2.Date && rep1.Date == rep3.Date && rep1.Date == new DateTime(1998, 12, 31));
 			Assert.IsTrue(rep1.Number == rep2.Number && rep1.Number == rep3.Number && rep1.Number == 123);
 			Assert.IsTrue(rep1.Array.SequenceEqual(rep2.Array) && rep1.Array.SequenceEqual(rep3.Array) && rep1.Array.SequenceEqual(new[] { 1, 2, 3 }));
 		}
@@ -212,7 +212,7 @@ namespace Container.Tests
 		public void SingletonsInScopeTest()
 		{
 			var scope = new ContainerScope();
-			scope.Register<DateTimeService>(lifetime: LifetimeType.Singleton, factory: () => new DateTimeService(DateTime.Now));
+			scope.Register<DateTimeService>(lifetime: Lifetime.Singleton, factory: () => new DateTimeService(DateTime.Now));
 			var service1 = scope.Resolve<DateTimeService>();
 
 			var localScope = scope.GetLocalScope();
@@ -226,7 +226,7 @@ namespace Container.Tests
 		public async Task TransientsInScopeTest()
 		{
 			var scope = new ContainerScope();
-			scope.Register<DateTimeService>(lifetime: LifetimeType.Transient, factory: () => new DateTimeService(DateTime.Now));
+			scope.Register<DateTimeService>(lifetime: Lifetime.Transient, factory: () => new DateTimeService(DateTime.Now));
 			var service1 = scope.Resolve<DateTimeService>();
 
 			await Task.Delay(1000);
@@ -242,7 +242,7 @@ namespace Container.Tests
 		public async Task ScopedInScopeTest()
 		{
 			var scope = new ContainerScope();
-			scope.Register<DateTimeService>(lifetime: LifetimeType.Scoped, factory: () => new DateTimeService(DateTime.Now));
+			scope.Register<DateTimeService>(lifetime: Lifetime.Scoped, factory: () => new DateTimeService(DateTime.Now));
 			var service1 = scope.Resolve<DateTimeService>();
 
 			await Task.Delay(1000);
@@ -259,7 +259,7 @@ namespace Container.Tests
 		{
 			var scope = new ContainerScope();
 			var localScope = scope.GetLocalScope();
-			localScope.Register<DateTimeService>(lifetime: LifetimeType.Singleton, factory: () => new DateTimeService(DateTime.Now));
+			localScope.Register<DateTimeService>(lifetime: Lifetime.Singleton, factory: () => new DateTimeService(DateTime.Now));
 
 			var localService = localScope.Resolve<DateTimeService>();
 			var globalService = scope.Resolve<DateTimeService>();

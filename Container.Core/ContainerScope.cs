@@ -10,6 +10,9 @@ using System.Runtime.CompilerServices;
 
 namespace Container.Core
 {
+	/// <summary>
+	/// Реализация скоупа DI-контейнера
+	/// </summary>
 	internal class ContainerScope : IContainerScope
 	{
 		private const string CannotResolveAbstractMessage = "Не удалось разрешить абстрактный тип или интерфейс";
@@ -32,32 +35,32 @@ namespace Container.Core
 		{ }
 
 		public void Register<TConcrete>()
-			=> Register<TConcrete>(lifetime: LifetimeType.Transient, factory: null);
+			=> Register<TConcrete>(lifetime: Lifetime.Transient, factory: null);
 
-		public void Register<TConcrete>(LifetimeType lifetime)
+		public void Register<TConcrete>(Lifetime lifetime)
 			=> Register<TConcrete>(lifetime: lifetime, factory: null);
 
 		public void Register<TConcrete>(Func<TConcrete> factory)
-			=> Register<TConcrete>(lifetime: LifetimeType.Transient, factory: factory);
+			=> Register<TConcrete>(lifetime: Lifetime.Transient, factory: factory);
 
-		public void Register<TConcrete>(LifetimeType lifetime, Func<TConcrete> factory)
+		public void Register<TConcrete>(Lifetime lifetime, Func<TConcrete> factory)
 		{
 			Register(typeof(TConcrete).FullName, typeof(TConcrete), lifetime, factory);
 		}
 
 		public void Register<TBase, TConcrete>()
 			where TConcrete : TBase
-			=> Register<TBase, TConcrete>(lifetime: LifetimeType.Transient, factory: null);
+			=> Register<TBase, TConcrete>(lifetime: Lifetime.Transient, factory: null);
 
-		public void Register<TBase, TConcrete>(LifetimeType lifetime)
+		public void Register<TBase, TConcrete>(Lifetime lifetime)
 			where TConcrete : TBase
 			=> Register<TBase, TConcrete>(lifetime: lifetime, factory: null);
 
 		public void Register<TBase, TConcrete>(Func<TConcrete> factory)
 			where TConcrete : TBase
-			=> Register<TBase, TConcrete>(lifetime: LifetimeType.Transient, factory: factory);
+			=> Register<TBase, TConcrete>(lifetime: Lifetime.Transient, factory: factory);
 
-		public void Register<TBase, TConcrete>(LifetimeType lifetime, Func<TConcrete> factory)
+		public void Register<TBase, TConcrete>(Lifetime lifetime, Func<TConcrete> factory)
 			where TConcrete : TBase
 		{
 			Register(typeof(TBase).FullName, typeof(TConcrete), lifetime, factory);
@@ -87,18 +90,21 @@ namespace Container.Core
 			return new ContainerScope(clonedDictionaryTypes);
 		}
 
+		/// <summary>
+		/// Очистка экземпляров типов, зарегистрированных как Scoped
+		/// </summary>
 		internal void ClearScopedInstances()
 		{
 			foreach (var item in dictionaryTypes)
 			{
-				if (item.Value.Lifetime == LifetimeType.Scoped)
+				if (item.Value.Lifetime == Lifetime.Scoped)
 				{
 					item.Value.Instance = null;
 				}
 			}
 		}
 
-		private void Register<T>(string typeName, Type realizationType, LifetimeType lifetime, Func<T> factory)
+		private void Register<T>(string typeName, Type realizationType, Lifetime lifetime, Func<T> factory)
 		{
 			ThrowsIf.TypeIsPrimitive(CannotRegisterPrimitiveTypeMessage, realizationType);
 			if (factory is null)
@@ -126,8 +132,8 @@ namespace Container.Core
 		private object CreateInstance(TypeInfo typeInfo)
 		{
 			var lifetime = typeInfo.Lifetime;
-			// Singleton && has instance
-			if ((lifetime == LifetimeType.Singleton || lifetime == LifetimeType.Scoped) && typeInfo.Instance != null)
+			// (Singleton OR Scoped) AND has instance
+			if ((lifetime == Lifetime.Singleton || lifetime == Lifetime.Scoped) && typeInfo.Instance != null)
 			{
 				return typeInfo.Instance;
 			}
@@ -136,8 +142,8 @@ namespace Container.Core
 				? typeInfo.GetFromFactory()
 				: CreateInstance(typeInfo.Realization);
 
-			// Singleton -> Запомнить instance
-			if (typeInfo.Lifetime == LifetimeType.Singleton || lifetime == LifetimeType.Scoped)
+			// Singleton OR Scoped -> Запомнить instance
+			if (typeInfo.Lifetime == Lifetime.Singleton || lifetime == Lifetime.Scoped)
 			{
 				typeInfo.Instance = instance;
 			}
@@ -158,17 +164,19 @@ namespace Container.Core
 			if (ctors.Any() == false)
 			{
 				// На этом этапе должны активироваться только конкретные типы.
-				// Абстрактные и интерфейсы - означает, что тип не зарегистрирован в контейнере
+				// Если попали абстрактные и интерфейсы - это означает, что тип не был зарегистрирован
 				ThrowsIf.TypeIsAbstract(CannotResolveAbstractMessage, type);
 				return Activator.CreateInstance(type);
 			}
 
-			// Если есть параметры в конструторе, то либо значение по умолчанию, либо рекурсивно резолвим зависимости (параметры)
+			// Если есть параметры в конструкторе, то либо значение по умолчанию, либо рекурсивно резолвим его зависимости (параметры)
 			var ctor = ctors.First();
+			// TODO: возможно, стоит предусмотреть вариант, когда есть несколько конструкторов, но не каждым можно зарезолвить.
+			// В таком случае можно попробовать зарезолвить тем конструктором, которым получится.
 			var parameters = ctor
 				.GetParameters()
 				.Select(x => x.HasDefaultValue
-					? x.DefaultValue 
+					? x.DefaultValue
 					: Resolve(x.ParameterType)
 				);
 			return ctor.Invoke(parameters.ToArray());

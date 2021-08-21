@@ -1,6 +1,6 @@
-﻿using System;
-using Container.Core;
+﻿using Container.Core;
 using Container.Example.BussinesLogic;
+using System;
 
 namespace Container.Example
 {
@@ -8,7 +8,7 @@ namespace Container.Example
 	{
 		static void Main()
 		{
-			DIContainer.Register<IUserRepository, UserRepository>(LifetimeType.Singleton);
+			DIContainer.Register<IUserRepository, UserRepository>(Lifetime.Singleton);
 			DIContainer.Register<IUserService, UserService>();
 			DIContainer.Register<IUserExtendedService, UserExtendedService>();
 
