@@ -1,7 +1,7 @@
 # DI-Container
 
 Features:
-- Lifetime cycles
+- Lifetime cycles (Transient, Scoped, Singleton)
 - Factories
 - Local scopes
 
