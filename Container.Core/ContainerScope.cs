@@ -12,6 +12,10 @@ namespace Container.Core
 {
 	internal class ContainerScope
 	{
+		private const string CannotResolveAbstractMessage = "Не удалось разрешить абстрактный тип или интерфейс";
+		private const string CannotRegisterAbstractMessage = "Нельзя зарегистрировать абстрактный тип или интерфейс без фабрики или указания конкретного типа";
+		private const string CannotRegisterPrimitiveTypeMessage = "Нельзя зарегистрировать примитивный тип данных";
+
 		private readonly Dictionary<string, TypeInfo> dictionaryTypes;
 
 		public ContainerScope()
@@ -41,10 +45,10 @@ namespace Container.Core
 
 		private void Register<T>(string typeName, Type realizationType, LifetimeType lifetime, Func<T> factory)
 		{
-			ThrowsIf.TypeIsPrimitive(realizationType);
+			ThrowsIf.TypeIsPrimitive(CannotRegisterPrimitiveTypeMessage, realizationType);
 			if (factory is null)
 			{
-				ThrowsIf.TypeIsAbstract(realizationType);
+				ThrowsIf.TypeIsAbstract(CannotRegisterAbstractMessage, realizationType);
 			}
 
 			dictionaryTypes[typeName] = new TypeInfo
@@ -100,16 +104,18 @@ namespace Container.Core
 			{
 				// На этом этапе должны активироваться только конкретные типы.
 				// Абстрактные и интерфейсы - означает, что тип не зарегистрирован в контейнере
-				if (type.IsAbstract)
-				{
-					// TODO: throw NotRegisterException
-				}
+				ThrowsIf.TypeIsAbstract(CannotResolveAbstractMessage, type);
 				return Activator.CreateInstance(type);
 			}
 
 			// Если есть параметры в конструторе, то либо значение по умолчанию, либо рекурсивно резолвим зависимости (параметры)
 			var ctor = ctors.First();
-			var parameters = ctor.GetParameters().Select(x => x.HasDefaultValue ? x.DefaultValue : Resolve(x.ParameterType));
+			var parameters = ctor
+				.GetParameters()
+				.Select(x => x.HasDefaultValue
+					? x.DefaultValue 
+					: Resolve(x.ParameterType)
+				);
 			return ctor.Invoke(parameters.ToArray());
 		}
 	}

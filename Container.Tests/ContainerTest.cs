@@ -2,6 +2,7 @@ using System;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Container.Core;
 using Container.Example.BussinesLogic;
+using Container.Core.Exceptions;
 
 namespace Container.Tests
 {
@@ -68,7 +69,7 @@ namespace Container.Tests
 			// Abstract type without Register<>() -> throws Exception
 			scope = new ContainerScope();
 			// TODO: заменить тип исключения
-			Assert.ThrowsException<MissingMethodException>(scope.Resolve<IUserRepository>);
+			Assert.ThrowsException<CannotResolveTypeException>(scope.Resolve<IUserRepository>);
 		}
 
 		[TestMethod]
@@ -137,34 +138,34 @@ namespace Container.Tests
 		{
 			var scope = new ContainerScope();
 
-			Assert.ThrowsException<Exception>(() => scope.Register<string>());
-			Assert.ThrowsException<Exception>(() => scope.Register<string>(factory: () => "String"));
-			Assert.ThrowsException<Exception>(() => scope.Register<string>(LifetimeType.Singleton));
-			Assert.ThrowsException<Exception>(() => scope.Register<string>(LifetimeType.Singleton, () => "String"));
+			Assert.ThrowsException<CannotRegisterPrimitiveTypeException>(() => scope.Register<string>());
+			Assert.ThrowsException<CannotRegisterPrimitiveTypeException>(() => scope.Register<string>(factory: () => "String"));
+			Assert.ThrowsException<CannotRegisterPrimitiveTypeException>(() => scope.Register<string>(LifetimeType.Singleton));
+			Assert.ThrowsException<CannotRegisterPrimitiveTypeException>(() => scope.Register<string>(LifetimeType.Singleton, () => "String"));
 			Assert.IsNull(scope.Resolve<string>());
 
-			Assert.ThrowsException<Exception>(() => scope.Register<int>());
-			Assert.ThrowsException<Exception>(() => scope.Register<int>(factory: () => 123));
-			Assert.ThrowsException<Exception>(() => scope.Register<int>(LifetimeType.Singleton));
-			Assert.ThrowsException<Exception>(() => scope.Register<int>(LifetimeType.Singleton, () => 123));
+			Assert.ThrowsException<CannotRegisterPrimitiveTypeException>(() => scope.Register<int>());
+			Assert.ThrowsException<CannotRegisterPrimitiveTypeException>(() => scope.Register<int>(factory: () => 123));
+			Assert.ThrowsException<CannotRegisterPrimitiveTypeException>(() => scope.Register<int>(LifetimeType.Singleton));
+			Assert.ThrowsException<CannotRegisterPrimitiveTypeException>(() => scope.Register<int>(LifetimeType.Singleton, () => 123));
 			Assert.AreEqual(scope.Resolve<int>(), new int());
 
-			Assert.ThrowsException<Exception>(() => scope.Register<decimal>());
-			Assert.ThrowsException<Exception>(() => scope.Register<decimal>(factory: () => 123m));
-			Assert.ThrowsException<Exception>(() => scope.Register<decimal>(LifetimeType.Singleton));
-			Assert.ThrowsException<Exception>(() => scope.Register<decimal>(LifetimeType.Singleton, () => 123m));
+			Assert.ThrowsException<CannotRegisterPrimitiveTypeException>(() => scope.Register<decimal>());
+			Assert.ThrowsException<CannotRegisterPrimitiveTypeException>(() => scope.Register<decimal>(factory: () => 123m));
+			Assert.ThrowsException<CannotRegisterPrimitiveTypeException>(() => scope.Register<decimal>(LifetimeType.Singleton));
+			Assert.ThrowsException<CannotRegisterPrimitiveTypeException>(() => scope.Register<decimal>(LifetimeType.Singleton, () => 123m));
 			Assert.AreEqual(scope.Resolve<decimal>(), new decimal());
 
-			Assert.ThrowsException<Exception>(() => scope.Register<DateTime>());
-			Assert.ThrowsException<Exception>(() => scope.Register<DateTime>(factory: () => DateTime.Now));
-			Assert.ThrowsException<Exception>(() => scope.Register<DateTime>(LifetimeType.Singleton));
-			Assert.ThrowsException<Exception>(() => scope.Register<DateTime>(LifetimeType.Singleton, () => DateTime.Now));
+			Assert.ThrowsException<CannotRegisterPrimitiveTypeException>(() => scope.Register<DateTime>());
+			Assert.ThrowsException<CannotRegisterPrimitiveTypeException>(() => scope.Register<DateTime>(factory: () => DateTime.Now));
+			Assert.ThrowsException<CannotRegisterPrimitiveTypeException>(() => scope.Register<DateTime>(LifetimeType.Singleton));
+			Assert.ThrowsException<CannotRegisterPrimitiveTypeException>(() => scope.Register<DateTime>(LifetimeType.Singleton, () => DateTime.Now));
 			Assert.AreEqual(scope.Resolve<DateTime>(), new DateTime());
 
-			Assert.ThrowsException<Exception>(() => scope.Register<int[]>());
-			Assert.ThrowsException<Exception>(() => scope.Register<int[]>(factory: () => new int[0]));
-			Assert.ThrowsException<Exception>(() => scope.Register<int[]>(LifetimeType.Singleton));
-			Assert.ThrowsException<Exception>(() => scope.Register<int[]>(LifetimeType.Singleton, () => new int[0]));
+			Assert.ThrowsException<CannotRegisterPrimitiveTypeException>(() => scope.Register<int[]>());
+			Assert.ThrowsException<CannotRegisterPrimitiveTypeException>(() => scope.Register<int[]>(factory: () => new int[0]));
+			Assert.ThrowsException<CannotRegisterPrimitiveTypeException>(() => scope.Register<int[]>(LifetimeType.Singleton));
+			Assert.ThrowsException<CannotRegisterPrimitiveTypeException>(() => scope.Register<int[]>(LifetimeType.Singleton, () => new int[0]));
 			Assert.IsNull(scope.Resolve<int[]>());
 		}
 	}
