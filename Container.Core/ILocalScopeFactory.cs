@@ -4,10 +4,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Container.Example.BussinesLogic
+namespace Container.Core
 {
-	public interface IUserRepository
+	public interface ILocalScopeFactory
 	{
-		DateTime Date { get; }
+		IContainerScope GetLocalScope();
 	}
 }

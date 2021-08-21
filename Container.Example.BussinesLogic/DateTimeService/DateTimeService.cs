@@ -6,8 +6,13 @@ using System.Threading.Tasks;
 
 namespace Container.Example.BussinesLogic
 {
-	public interface IUserRepository
+	public class DateTimeService
 	{
-		DateTime Date { get; }
+		public DateTimeService(DateTime dateTime)
+		{
+			DateTime = dateTime;
+		}
+
+		public DateTime DateTime { get; }
 	}
 }

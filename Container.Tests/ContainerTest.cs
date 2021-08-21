@@ -3,6 +3,8 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Container.Core;
 using Container.Example.BussinesLogic;
 using Container.Core.Exceptions;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace Container.Tests
 {
@@ -167,6 +169,114 @@ namespace Container.Tests
 			Assert.ThrowsException<CannotRegisterPrimitiveTypeException>(() => scope.Register<int[]>(LifetimeType.Singleton));
 			Assert.ThrowsException<CannotRegisterPrimitiveTypeException>(() => scope.Register<int[]>(LifetimeType.Singleton, () => new int[0]));
 			Assert.IsNull(scope.Resolve<int[]>());
+		}
+
+		[TestMethod]
+		public void GlobalScopeTest()
+		{
+			DIContainer.Register<UserRepository>(() => new UserRepository(123, new[] { 1, 2, 3 }, new DateTime(1998, 12, 31)));
+			var rep1 = DIContainer.Resolve<UserRepository>();
+			var rep2 = DIContainer.GlobalScope.Resolve<UserRepository>();
+			var rep3 = DIContainer.GetLocalScope().Resolve<UserRepository>();
+
+			Assert.IsTrue(rep1.Date == rep2.Date &&  rep1.Date == rep3.Date && rep1.Date == new DateTime(1998, 12, 31));
+			Assert.IsTrue(rep1.Number == rep2.Number && rep1.Number == rep3.Number && rep1.Number == 123);
+			Assert.IsTrue(rep1.Array.SequenceEqual(rep2.Array) && rep1.Array.SequenceEqual(rep3.Array) && rep1.Array.SequenceEqual(new[] { 1, 2, 3 }));
+		}
+
+		[TestMethod]
+		public void AllScopesAreUniqueObjectsTest()
+		{
+			var globalScope = DIContainer.GlobalScope;
+			var localScope1 = DIContainer.GetLocalScope();
+			var localScope2 = DIContainer.GetLocalScope();
+			var localScope3 = localScope1.GetLocalScope();
+			var localScope4 = globalScope.GetLocalScope();
+
+			Assert.AreNotSame(globalScope, localScope1);
+			Assert.AreNotSame(globalScope, localScope2);
+			Assert.AreNotSame(globalScope, localScope3);
+			Assert.AreNotSame(globalScope, localScope4);
+
+			Assert.AreNotSame(localScope1, localScope2);
+			Assert.AreNotSame(localScope1, localScope3);
+			Assert.AreNotSame(localScope1, localScope4);
+
+			Assert.AreNotSame(localScope2, localScope3);
+			Assert.AreNotSame(localScope2, localScope4);
+
+			Assert.AreNotSame(localScope3, localScope4);
+		}
+
+		[TestMethod]
+		public void SingletonsInScopeTest()
+		{
+			var scope = new ContainerScope();
+			scope.Register<DateTimeService>(lifetime: LifetimeType.Singleton, factory: () => new DateTimeService(DateTime.Now));
+			var service1 = scope.Resolve<DateTimeService>();
+
+			var localScope = scope.GetLocalScope();
+			var service2 = localScope.Resolve<DateTimeService>();
+
+			Assert.AreSame(service1, service2);
+			Assert.AreEqual(service1.DateTime, service2.DateTime);
+		}
+
+		[TestMethod]
+		public async Task TransientsInScopeTest()
+		{
+			var scope = new ContainerScope();
+			scope.Register<DateTimeService>(lifetime: LifetimeType.Transient, factory: () => new DateTimeService(DateTime.Now));
+			var service1 = scope.Resolve<DateTimeService>();
+
+			await Task.Delay(1000);
+
+			var localScope = scope.GetLocalScope();
+			var service2 = localScope.Resolve<DateTimeService>();
+
+			Assert.AreNotSame(service1, service2);
+			Assert.AreNotEqual(service1.DateTime, service2.DateTime);
+		}
+
+		[TestMethod]
+		public async Task ScopedInScopeTest()
+		{
+			var scope = new ContainerScope();
+			scope.Register<DateTimeService>(lifetime: LifetimeType.Scoped, factory: () => new DateTimeService(DateTime.Now));
+			var service1 = scope.Resolve<DateTimeService>();
+
+			await Task.Delay(1000);
+
+			var localScope = scope.GetLocalScope();
+			var service2 = localScope.Resolve<DateTimeService>();
+
+			Assert.AreNotSame(service1, service2);
+			Assert.AreNotEqual(service1.DateTime, service2.DateTime);
+		}
+
+		[TestMethod]
+		public void LocalScopeDoesNotAffectOnParentScopeTest()
+		{
+			var scope = new ContainerScope();
+			var localScope = scope.GetLocalScope();
+			localScope.Register<DateTimeService>(lifetime: LifetimeType.Singleton, factory: () => new DateTimeService(DateTime.Now));
+
+			var localService = localScope.Resolve<DateTimeService>();
+			var globalService = scope.Resolve<DateTimeService>();
+
+			Assert.AreNotSame(localService, globalService);
+			Assert.AreNotEqual(localService.DateTime, globalService.DateTime);
+		}
+
+		[TestMethod]
+		public void GlobalScopeAffectDIContainerTest()
+		{
+			DIContainer.GlobalScope.Register<DateTimeService>(factory: () => new DateTimeService(new DateTime(1998, 12, 31)));
+
+			var service = DIContainer.Resolve<DateTimeService>();
+
+			Assert.IsNotNull(service);
+			Assert.AreEqual(service.DateTime, new DateTime(1998, 12, 31));
 		}
 	}
 }

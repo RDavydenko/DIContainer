@@ -8,18 +8,20 @@ namespace Container.Example.BussinesLogic
 {
 	public class UserRepository : IUserRepository
 	{
-		private readonly DateTime date;
-
 		public UserRepository(int number, int[] array, DateTime? date = null)
 		{
-			this.date = date ?? DateTime.Now;
+			Number = number;
+			Array = array;
+			Date = date ?? DateTime.Now;
 		}
 
-		public DateTime DateTime => date;
+		public int Number { get; }
+		public int[] Array { get; }
+		public DateTime Date { get; }
 
 		public override string ToString()
 		{
-			return $"Дата создания: {date:T}";
+			return $"Дата создания: {Date:T}";
 		}
 	}
 }

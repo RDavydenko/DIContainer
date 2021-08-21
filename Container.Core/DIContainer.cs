@@ -1,4 +1,4 @@
-﻿using Container.Core.Models;
+﻿using Container.Core.Extensions;
 using System;
 
 namespace Container.Core
@@ -12,7 +12,12 @@ namespace Container.Core
 			globalScope = new ContainerScope();
 		}
 
-		public static void Register<TConcrete>(LifetimeType lifetime = LifetimeType.Transient)
+		public static IContainerScope GlobalScope => globalScope;
+
+		public static void Register<TConcrete>()
+			=> Register<TConcrete>(lifetime: LifetimeType.Transient, factory: null);
+
+		public static void Register<TConcrete>(LifetimeType lifetime)
 			=> Register<TConcrete>(lifetime: lifetime, factory: null);
 
 		public static void Register<TConcrete>(Func<TConcrete> factory)
@@ -23,7 +28,11 @@ namespace Container.Core
 			globalScope.Register<TConcrete>(lifetime, factory);
 		}
 
-		public static void Register<TBase, TConcrete>(LifetimeType lifetime = LifetimeType.Transient)
+		public static void Register<TBase, TConcrete>()
+			where TConcrete : TBase
+			=> Register<TBase, TConcrete>(lifetime: LifetimeType.Transient, factory: null);
+
+		public static void Register<TBase, TConcrete>(LifetimeType lifetime)
 			where TConcrete : TBase
 			=> Register<TBase, TConcrete>(lifetime: lifetime, factory: null);
 
@@ -40,6 +49,11 @@ namespace Container.Core
 		public static T Resolve<T>()
 		{
 			return globalScope.Resolve<T>();
+		}
+
+		public static IContainerScope GetLocalScope()
+		{
+			return globalScope.GetClearedLocalScope();
 		}
 	}
 }

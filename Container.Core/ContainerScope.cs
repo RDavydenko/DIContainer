@@ -10,7 +10,7 @@ using System.Runtime.CompilerServices;
 
 namespace Container.Core
 {
-	internal class ContainerScope
+	internal class ContainerScope : IContainerScope
 	{
 		private const string CannotResolveAbstractMessage = "Не удалось разрешить абстрактный тип или интерфейс";
 		private const string CannotRegisterAbstractMessage = "Нельзя зарегистрировать абстрактный тип или интерфейс без фабрики или указания конкретного типа";
@@ -18,17 +18,46 @@ namespace Container.Core
 
 		private readonly Dictionary<string, TypeInfo> dictionaryTypes;
 
-		public ContainerScope()
+		private ContainerScope(Dictionary<string, TypeInfo> dictionaryTypes)
 		{
-			dictionaryTypes = new Dictionary<string, TypeInfo>();
+			if (dictionaryTypes is null)
+			{
+				throw new ArgumentNullException(nameof(dictionaryTypes));
+			}
+			this.dictionaryTypes = dictionaryTypes;
 		}
 
-		public void Register<TConcrete>(LifetimeType lifetime = LifetimeType.Transient, Func<TConcrete> factory = null)
+		public ContainerScope()
+			: this(new Dictionary<string, TypeInfo>())
+		{ }
+
+		public void Register<TConcrete>()
+			=> Register<TConcrete>(lifetime: LifetimeType.Transient, factory: null);
+
+		public void Register<TConcrete>(LifetimeType lifetime)
+			=> Register<TConcrete>(lifetime: lifetime, factory: null);
+
+		public void Register<TConcrete>(Func<TConcrete> factory)
+			=> Register<TConcrete>(lifetime: LifetimeType.Transient, factory: factory);
+
+		public void Register<TConcrete>(LifetimeType lifetime, Func<TConcrete> factory)
 		{
 			Register(typeof(TConcrete).FullName, typeof(TConcrete), lifetime, factory);
 		}
 
-		public void Register<TBase, TConcrete>(LifetimeType lifetime = LifetimeType.Transient, Func<TConcrete> factory = null)
+		public void Register<TBase, TConcrete>()
+			where TConcrete : TBase
+			=> Register<TBase, TConcrete>(lifetime: LifetimeType.Transient, factory: null);
+
+		public void Register<TBase, TConcrete>(LifetimeType lifetime)
+			where TConcrete : TBase
+			=> Register<TBase, TConcrete>(lifetime: lifetime, factory: null);
+
+		public void Register<TBase, TConcrete>(Func<TConcrete> factory)
+			where TConcrete : TBase
+			=> Register<TBase, TConcrete>(lifetime: LifetimeType.Transient, factory: factory);
+
+		public void Register<TBase, TConcrete>(LifetimeType lifetime, Func<TConcrete> factory)
 			where TConcrete : TBase
 		{
 			Register(typeof(TBase).FullName, typeof(TConcrete), lifetime, factory);
@@ -37,10 +66,36 @@ namespace Container.Core
 		public T Resolve<T>()
 		{
 			var type = typeof(T);
-			var resolved = Resolve(type);			
-			return resolved is null 
-				? default(T) 
+			var resolved = Resolve(type);
+			return resolved is null
+				? default(T)
 				: (T)resolved;
+		}
+
+		public IContainerScope GetLocalScope()
+		{
+			return this.GetClearedLocalScope();
+		}
+
+		public object Clone()
+		{
+			var clonedDictionaryTypes = new Dictionary<string, TypeInfo>(dictionaryTypes.Count);
+			foreach (var (key, value) in dictionaryTypes)
+			{
+				clonedDictionaryTypes.Add(key, (TypeInfo)value.Clone());
+			}
+			return new ContainerScope(clonedDictionaryTypes);
+		}
+
+		internal void ClearScopedInstances()
+		{
+			foreach (var item in dictionaryTypes)
+			{
+				if (item.Value.Lifetime == LifetimeType.Scoped)
+				{
+					item.Value.Instance = null;
+				}
+			}
 		}
 
 		private void Register<T>(string typeName, Type realizationType, LifetimeType lifetime, Func<T> factory)
@@ -72,7 +127,7 @@ namespace Container.Core
 		{
 			var lifetime = typeInfo.Lifetime;
 			// Singleton && has instance
-			if (lifetime == LifetimeType.Singleton && typeInfo.Instance != null)
+			if ((lifetime == LifetimeType.Singleton || lifetime == LifetimeType.Scoped) && typeInfo.Instance != null)
 			{
 				return typeInfo.Instance;
 			}
@@ -82,7 +137,7 @@ namespace Container.Core
 				: CreateInstance(typeInfo.Realization);
 
 			// Singleton -> Запомнить instance
-			if (typeInfo.Lifetime == LifetimeType.Singleton)
+			if (typeInfo.Lifetime == LifetimeType.Singleton || lifetime == LifetimeType.Scoped)
 			{
 				typeInfo.Instance = instance;
 			}
