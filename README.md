@@ -1,5 +1,10 @@
 # DI-Container
 
+Features:
+- Lifetime cycles
+- Factories
+- Local scopes
+
 Global DI:
 ``` csharp
 DIContainer.Register<IUserRepository, UserRepository>(Lifetime.Singleton);
